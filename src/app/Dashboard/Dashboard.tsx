@@ -3,6 +3,7 @@
 import { Search, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { TrendingUp } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -11,13 +12,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { Line, LineChart, ResponsiveContainer } from "recharts";
+import {
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ReferenceLine,
+} from "recharts";
 
 const totalOrdersData1 = [
   { date: "2023-01-01", value: 400 },
@@ -55,19 +70,15 @@ export default function Dashboard() {
       {/* Sidebar */}
       <aside className="w-64 bg-white p-6 flex flex-col border-r border-gray-200">
         <div className="mb-8">
-          <img
-            src="/placeholder.svg?height=50&width=120"
-            alt="AALAA designs"
-            className="w-30 h-12"
-          />
+          <img src="/logoblack.png" alt="AALAA designs" className="h-[140px]" />
         </div>
-        <nav className="space-y-2 flex-grow">
+        <nav className="space-y-1 flex-grow">
           <Button
-            variant="secondary"
-            className="w-full justify-start bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0] hover:text-[#475569]"
+            variant="ghost"
+            className="w-full justify-start text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#475569] pl-2"
           >
             <svg
-              className="w-5 h-5 mr-2"
+              className="w-5 h-5 mr-3"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -83,10 +94,10 @@ export default function Dashboard() {
           </Button>
           <Button
             variant="ghost"
-            className="w-full justify-start text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#475569]"
+            className="w-full justify-start text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#475569] pl-2"
           >
             <svg
-              className="w-5 h-5 mr-2"
+              className="w-5 h-5 mr-3"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -102,10 +113,10 @@ export default function Dashboard() {
           </Button>
           <Button
             variant="ghost"
-            className="w-full justify-start text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#475569]"
+            className="w-full justify-start text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#475569] pl-2"
           >
             <svg
-              className="w-5 h-5 mr-2"
+              className="w-5 h-5 mr-3"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -121,10 +132,10 @@ export default function Dashboard() {
           </Button>
           <Button
             variant="ghost"
-            className="w-full justify-start text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#475569]"
+            className="w-full justify-start text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#475569] pl-2"
           >
             <svg
-              className="w-5 h-5 mr-2"
+              className="w-5 h-5 mr-3"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -140,10 +151,10 @@ export default function Dashboard() {
           </Button>
           <Button
             variant="ghost"
-            className="w-full justify-start text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#475569]"
+            className="w-full justify-start text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#475569] pl-2"
           >
             <svg
-              className="w-5 h-5 mr-2"
+              className="w-5 h-5 mr-3"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -158,16 +169,16 @@ export default function Dashboard() {
             Messages
           </Button>
         </nav>
-        <div className="mt-auto space-y-2">
+        <div className="mt-auto space-y-1">
           <Button
             variant="ghost"
-            className="w-full justify-start text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#475569]"
+            className="w-full justify-start text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#475569] pl-2"
           >
             Logout
           </Button>
           <Button
             variant="ghost"
-            className="w-full justify-start text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#475569]"
+            className="w-full justify-start text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#475569] pl-2"
           >
             Settings
           </Button>
@@ -210,25 +221,44 @@ export default function Dashboard() {
                     color: "#10B981",
                   },
                 }}
-                className="h-[80px]"
+                className="h-[100px] w-full"
               >
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={totalOrdersData1}>
+                  <LineChart
+                    data={totalOrdersData1}
+                    accessibilityLayer
+                    margin={{
+                      left: 12,
+                      right: 12,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" hide />
+                    <YAxis hide />
                     <Line
-                      type="monotone"
+                      type="natural"
                       dataKey="value"
                       stroke="#10B981"
-                      strokeWidth={2}
+                      strokeWidth={3}
                       dot={false}
                     />
-                    <ChartTooltip content={<ChartTooltipContent />} />
+                    {/*<ReferenceLine y={0} stroke="#000" strokeWidth={2} />*/}
+                    <ChartTooltip
+                      content={<ChartTooltipContent indicator="line" />}
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </ChartContainer>
-              <div className="text-2xl font-bold mt-2 text-[#1E293B]">
-                15481 EGP
-              </div>
             </CardContent>
+            <CardFooter className="flex-col items-start gap-2 text-sm">
+              <div className="flex gap-2 font-medium leading-none">
+                Trending up by 5.2% this month{" "}
+                <TrendingUp className="h-4 w-4 fill-green-600" />
+              </div>
+              <div className="leading-none text-muted-foreground">
+                Showing total visitors for the last 6 months
+              </div>
+            </CardFooter>
           </Card>
           <Card className="bg-white shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -247,18 +277,30 @@ export default function Dashboard() {
                     color: "#10B981",
                   },
                 }}
-                className="h-[80px]"
+                className="h-[100px] w-full"
               >
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={totalOrdersData2}>
+                  <LineChart
+                    data={totalOrdersData2}
+                    margin={{
+                      left: 12,
+                      right: 12,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" hide />
+                    <YAxis hide />
                     <Line
                       type="monotone"
                       dataKey="value"
                       stroke="#10B981"
-                      strokeWidth={2}
+                      strokeWidth={3}
                       dot={false}
                     />
-                    <ChartTooltip content={<ChartTooltipContent />} />
+                    {/*<ReferenceLine y={0} stroke="#000" strokeWidth={2} />*/}
+                    <ChartTooltip
+                      content={<ChartTooltipContent indicator="line" />}
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </ChartContainer>
@@ -288,13 +330,17 @@ export default function Dashboard() {
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={canceledOrdersData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" hide />
+                    <YAxis hide />
                     <Line
                       type="monotone"
                       dataKey="value"
                       stroke="#EF4444"
-                      strokeWidth={2}
+                      strokeWidth={3}
                       dot={false}
                     />
+                    <ReferenceLine y={0} stroke="#000" strokeWidth={2} />
                     <ChartTooltip content={<ChartTooltipContent />} />
                   </LineChart>
                 </ResponsiveContainer>
@@ -359,9 +405,9 @@ export default function Dashboard() {
                       <span
                         className={`px-2 py-1 rounded-full text-xs ${
                           [
-                            "bg-green-100 text-green-800",
-                            "bg-yellow-100 text-yellow-800",
-                            "bg-red-100 text-red-800",
+                            "bg-[#DCFCE7] text-[#22C55E]",
+                            "bg-[#FEF9C3] text-[#CA8A04]",
+                            "bg-[#FEE2E2] text-[#EF4444]",
                           ][Math.floor(Math.random() * 3)]
                         }`}
                       >
@@ -391,7 +437,11 @@ export default function Dashboard() {
                   key={index}
                   variant={page === 1 ? "default" : "outline"}
                   size="sm"
-                  className={`${page === 1 ? "bg-[#10B981] text-white hover:bg-[#0D9488]" : "text-[#64748B] border-gray-300 hover:bg-[#F1F5F9] hover:text-[#475569]"} ${page === "..." ? "pointer-events-none" : ""}`}
+                  className={`${
+                    page === 1
+                      ? "bg-[#10B981] text-white hover:bg-[#0D9488]"
+                      : "text-[#64748B] border-gray-300 hover:bg-[#F1F5F9] hover:text-[#475569]"
+                  } ${page === "..." ? "pointer-events-none" : ""}`}
                 >
                   {page}
                 </Button>
