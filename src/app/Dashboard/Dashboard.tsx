@@ -226,7 +226,7 @@ export default function Dashboard() {
                   className="w-full justify-start text-sm text-muted-foreground"
                 >
                   <Search className="mr-2 h-4 w-4" />
-                  Search...
+                  Click to expand search...
                   <kbd className="pointer-events-none absolute right-1.5 top-1.5 hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
                     <span className="text-xs">Ctrl</span>K
                   </kbd>
