@@ -41,7 +41,6 @@ import {
   Edit,
   Save,
 } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
 import { cn, User } from "@/lib/utils";
 
 type PurchaseHistory = {
@@ -214,7 +213,7 @@ export function AnimatedTabs({
   return (
     <Tabs
       value={activeTab}
-      onValueChange={(value) => setActiveTab(value as keyof TabContent)}
+      onValueChange={(value: string) => setActiveTab(value as keyof TabContent)}
       className="space-y-4"
     >
       <TabsList className={cn(isDarkMode ? "bg-gray-800" : "bg-gray-200")}>
@@ -372,14 +371,6 @@ export default function CustomerDetailsPage() {
               )}
               {isEditing ? "Save Changes" : "Edit Customer"}
             </Button>
-            <div className="flex items-center space-x-2">
-              <Sun className="h-4 w-4" />
-              <Switch
-                checked={isDarkMode}
-                onCheckedChange={() => setIsDarkMode(!isDarkMode)}
-              />
-              <Moon className="h-4 w-4" />
-            </div>
           </div>
         </div>
 
