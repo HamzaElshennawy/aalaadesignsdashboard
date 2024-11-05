@@ -34,7 +34,8 @@ import {
   YAxis,
   CartesianGrid,
 } from "recharts";
-import { cn } from "@/lib/utils";
+import { cn, User } from "@/lib/utils";
+import { useEffect, useState } from "react";
 
 type ChartData = {
   date: string;

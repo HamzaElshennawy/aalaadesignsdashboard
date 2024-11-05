@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ChangeEvent } from "react";
+import { useState, ChangeEvent, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -42,7 +42,7 @@ import {
   Save,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
+import { cn, User } from "@/lib/utils";
 
 type PurchaseHistory = {
   id: string;
