@@ -91,7 +91,7 @@ type AnimatedTabsProps = {
   spendingData: SpendingData[];
   customer: Customer;
   isEditing: boolean;
-  handleInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  handleInputChangeAction: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
 };
 
 export function AnimatedTabs({
@@ -100,7 +100,7 @@ export function AnimatedTabs({
   spendingData,
   customer,
   isEditing,
-  handleInputChange,
+  handleInputChangeAction,
 }: AnimatedTabsProps) {
   const [activeTab, setActiveTab] = useState<keyof TabContent>("purchases");
 
@@ -196,7 +196,7 @@ export function AnimatedTabs({
         <Textarea
           name="notes"
           value={customer.notes}
-          onChange={handleInputChange}
+          onChange={handleInputChangeAction}
           rows={5}
           className={cn(
             "w-full",
@@ -529,7 +529,7 @@ export default function CustomerDetailsPage() {
           spendingData={spendingData}
           customer={customer}
           isEditing={isEditing}
-          handleInputChange={handleInputChange}
+          handleInputChangeAction={handleInputChange}
         />
       </div>
     </div>
