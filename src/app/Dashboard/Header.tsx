@@ -4,8 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Command, CommandInput } from "@/components/ui/command";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Switch } from "@/components/ui/switch";
 import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -73,18 +71,6 @@ export default function Header({
             </Command>
           </DialogContent>
         </Dialog>
-      </div>
-
-      <div className="flex items-center space-x-4">
-        <Switch
-          checked={isDarkMode}
-          onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
-          className="mr-4"
-        />
-        <Avatar>
-          <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-          <AvatarFallback>CN</AvatarFallback>
-        </Avatar>
       </div>
     </motion.header>
   );
