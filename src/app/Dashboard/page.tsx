@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import Sidebar from "./Sidebar";
 import Header from "./Header";
@@ -26,6 +27,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("dashboard");
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const { theme, setTheme } = useTheme();
+  const [queryClient] = useState(() => new QueryClient());
 
   useEffect(() => {
     setIsLoaded(true);
@@ -59,27 +61,28 @@ export default function Dashboard() {
           isDarkMode={isDarkMode}
           setTheme={setTheme}
         />
-
-        <main className="flex-1 p-4 md:p-8 overflow-auto">
-          <AnimatePresence>
-            {isLoaded && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-              >
-                {activeTab === "dashboard" && (
-                  <DashboardContent isDarkMode={isDarkMode} />
-                )}
-                {activeTab === "analytics" && <AnalyticsContent />}
-                {activeTab === "customers" && <CustomersContent />}
-                {activeTab === "messages" && <MessagesContent />}
-                {activeTab === "products" && <ProductsContent />}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </main>
+        <QueryClientProvider client={queryClient}>
+          <main className="flex-1 p-4 md:p-8 overflow-auto">
+            <AnimatePresence>
+              {isLoaded && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                >
+                  {activeTab === "dashboard" && (
+                    <DashboardContent isDarkMode={isDarkMode} />
+                  )}
+                  {activeTab === "analytics" && <AnalyticsContent />}
+                  {activeTab === "customers" && <CustomersContent />}
+                  {activeTab === "messages" && <MessagesContent />}
+                  {activeTab === "products" && <ProductsContent />}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </main>
+        </QueryClientProvider>
       </div>
     </motion.div>
   );
