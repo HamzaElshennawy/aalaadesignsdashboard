@@ -1,8 +1,18 @@
+"use client";
+
+import { CldImage, CldImageProps } from "next-cloudinary";
+//import Image from "next/image";
+
 export default function AnalyticsContent() {
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">Analytics</h2>
-      <p>Analytics content goes here.</p>
+      <h1>Analytics</h1>
+      <CldImage
+        alt="Cloudinary logo"
+        src="arrival3_yvf3gq"
+        width="300"
+        height="500"
+      />
     </div>
   );
 }

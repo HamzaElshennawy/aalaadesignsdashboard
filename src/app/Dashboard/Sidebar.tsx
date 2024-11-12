@@ -11,10 +11,16 @@ import {
   MessageSquare,
   LogOut,
   Settings,
+  Package,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
-type ActiveTab = "dashboard" | "analytics" | "customers" | "messages";
+type ActiveTab =
+  | "dashboard"
+  | "analytics"
+  | "customers"
+  | "messages"
+  | "products";
 
 type NavItem = {
   icon: React.ElementType;
@@ -37,6 +43,7 @@ const navItems: NavItem[] = [
   { icon: BarChart2, label: "Analytics", value: "analytics" },
   { icon: Users, label: "Customers", value: "customers" },
   { icon: MessageSquare, label: "Messages", value: "messages" },
+  { icon: Package, label: "Products", value: "products" },
 ];
 
 export default function Sidebar({

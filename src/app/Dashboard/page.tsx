@@ -11,8 +11,14 @@ import DashboardContent from "./DashboardContent";
 import AnalyticsContent from "./AnalyticsContent";
 import CustomersContent from "./CustomersContent";
 import MessagesContent from "./MessagesContent";
+import ProductsContent from "./ProductsContent";
 
-type ActiveTab = "dashboard" | "analytics" | "customers" | "messages";
+type ActiveTab =
+  | "dashboard"
+  | "analytics"
+  | "customers"
+  | "messages"
+  | "products";
 
 export default function Dashboard() {
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
@@ -69,6 +75,7 @@ export default function Dashboard() {
                 {activeTab === "analytics" && <AnalyticsContent />}
                 {activeTab === "customers" && <CustomersContent />}
                 {activeTab === "messages" && <MessagesContent />}
+                {activeTab === "products" && <ProductsContent />}
               </motion.div>
             )}
           </AnimatePresence>
