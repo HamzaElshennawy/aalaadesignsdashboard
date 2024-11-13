@@ -1,7 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  ref,
+  uploadBytesResumable,
+  UploadTaskSnapshot,
+  getDownloadURL,
+} from "firebase/storage";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,20 +26,31 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Loader2 } from "lucide-react";
+import { Loader2, Plus, Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { initializeApp } from "firebase/app";
+import { storage } from "./firebase";
 
 interface Product {
   id: number;
   name: string;
   description: string;
   price: number;
-  image_path: string;
   stock: number;
+  createdat: string;
+  image_path: string;
+  categoryid: number;
   material: string;
+  subcategoryid: number;
 }
 
-interface ApiResponse {
+interface NewProduct
+  extends Omit<
+    Product,
+    "id" | "createdat" | "stock" | "categoryid" | "subcategoryid"
+  > {}
+
+interface ProductsResponse {
   products: Product[];
   currentPage: number;
   totalProducts: number;
@@ -42,20 +59,80 @@ interface ApiResponse {
   limit: number;
 }
 
-export default function SimplifiedProductListing() {
-  const [productData, setProductData] = useState<ApiResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+const ExpandedCard = ({
+  product,
+  onClose,
+}: {
+  product: Product;
+  onClose: () => void;
+}) => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    className="fixed inset-0 z-50 overflow-y-auto"
+    style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+    onClick={onClose}
+  >
+    <motion.div
+      layoutId={`card-${product.id}`}
+      className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6 m-4"
+      onClick={(e) => e.stopPropagation()}
+      initial={{ scale: 0.9, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      exit={{ scale: 0.9, opacity: 0 }}
+      transition={{ type: "spring", damping: 30, stiffness: 300 }}
+    >
+      <Button
+        className="absolute top-4 right-4"
+        variant="ghost"
+        size="icon"
+        onClick={onClose}
+      >
+        <X className="h-6 w-6" />
+      </Button>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <img
+            src={"arrival1.png"}
+            alt={product.name}
+            className="w-full h-64 object-cover rounded-md"
+          />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold mb-2">{product.name}</h2>
+          <p className="text-gray-600 mb-4">{product.description}</p>
+          <p className="font-bold text-xl mb-2">${product.price.toFixed(2)}</p>
+          <p className="text-sm mb-1">Material: {product.material}</p>
+          <p className="text-sm mb-4">Stock: {product.stock}</p>
+          <p className="text-sm text-gray-500">
+            Added on: {new Date(product.createdat).toLocaleDateString()}
+          </p>
+        </div>
+      </div>
+    </motion.div>
+  </motion.div>
+);
+
+export default function ProductListingPage() {
+  const { toast } = useToast();
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newProduct, setNewProduct] = useState<Omit<Product, "id">>({
+  const [newProduct, setNewProduct] = useState<NewProduct>({
     name: "",
     description: "",
     price: 0,
-    image_path: "/placeholder.svg?height=100&width=100",
-    stock: 0,
+    image_path: "",
     material: "",
   });
-  const { toast } = useToast();
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [expandedProductId, setExpandedProductId] = useState<number | null>(
+    null
+  );
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -64,11 +141,11 @@ export default function SimplifiedProductListing() {
         if (!response.ok) {
           throw new Error("Failed to fetch products");
         }
-        const data: ApiResponse = await response.json();
-        setProductData(data);
-      } catch (err) {
-        setError("An error occurred while fetching products.");
-        console.error(err);
+        const data: ProductsResponse = await response.json();
+        setProducts(data.products);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        setError("Error loading products. Please try again later.");
       } finally {
         setIsLoading(false);
       }
@@ -78,60 +155,119 @@ export default function SimplifiedProductListing() {
   }, []);
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setNewProduct((prev) => ({
       ...prev,
-      [name]: name === "price" || name === "stock" ? parseFloat(value) : value,
+      [name]: name === "price" ? parseFloat(value) : value,
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setError(null);
+
+    if (file) {
+      setSelectedImage(file);
+
+      const reader = new FileReader();
+      reader.onload = (event: ProgressEvent<FileReader>) => {
+        setPreviewUrl(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleClearImage = () => {
+    setSelectedImage(null);
+    setPreviewUrl(null);
+    setError(null);
+    setUploadProgress(0);
+  };
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(null);
+
+    if (!selectedImage) {
+      setError("Please select an image for the product");
+      return;
+    }
+
     try {
-      const response = await fetch("/api/products", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      // Upload image to Firebase Storage
+      const storageRef = ref(storage, `products/${selectedImage.name}`);
+      const uploadTask = uploadBytesResumable(storageRef, selectedImage);
+
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const progress =
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          console.log(progress);
+          setUploadProgress(progress);
         },
-        body: JSON.stringify(newProduct),
-      });
+        (error) => {
+          console.error("Upload error:", error);
+          setError("Failed to upload image. Please try again.");
+        },
+        async () => {
+          // Get download URL after successful upload
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          console.log(downloadURL);
 
-      if (!response.ok) {
-        throw new Error("Failed to add product");
-      }
+          const productToAdd: NewProduct = {
+            ...newProduct,
+            image_path: downloadURL,
+          };
 
-      const addedProduct: Product = await response.json();
-      setProductData((prevData) => {
-        if (!prevData) return null;
-        return {
-          ...prevData,
-          products: [...prevData.products, addedProduct],
-          totalProducts: prevData.totalProducts + 1,
-        };
-      });
-      setIsModalOpen(false);
-      setNewProduct({
-        name: "",
-        description: "",
-        price: 0,
-        image_path: "/arrival1.png",
-        stock: 0,
-        material: "",
-      });
-      toast({
-        title: "Success",
-        description: "Product added successfully",
-      });
-    } catch (err) {
-      console.error("Error adding product:", err);
+          //const response = await fetch("/api/products/product", {
+          //  method: "POST",
+          //  headers: {
+          //    "Content-Type": "application/json",
+          //  },
+          //  body: JSON.stringify(productToAdd),
+          //});
+
+          //if (!response.ok) {
+          //  throw new Error("Failed to add product");
+          //}
+
+          //const addedProduct = await response.json();
+          //setProducts((prevProducts) => [...prevProducts, addedProduct]);
+          setIsModalOpen(false);
+          resetForm();
+          toast({
+            title: "Product added successfully",
+            description: "The new product has been added to the catalog.",
+          });
+        }
+      );
+    } catch (error) {
+      setError(
+        error instanceof Error ? error.message : "An unknown error occurred"
+      );
       toast({
         title: "Error",
-        description: "Failed to add product. Please try again.",
+        description: "Failed to add the product. Please try again.",
         variant: "destructive",
       });
     }
+  };
+
+  const resetForm = () => {
+    setNewProduct({
+      name: "",
+      description: "",
+      price: 0,
+      image_path: "",
+      material: "",
+    });
+    setSelectedImage(null);
+    setPreviewUrl(null);
+    setError(null);
+    setUploadProgress(0);
   };
 
   if (isLoading) {
@@ -193,17 +329,6 @@ export default function SimplifiedProductListing() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="stock">Stock</Label>
-                <Input
-                  id="stock"
-                  name="stock"
-                  type="number"
-                  value={newProduct.stock}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="material">Material</Label>
                 <Input
                   id="material"
@@ -213,8 +338,66 @@ export default function SimplifiedProductListing() {
                   required
                 />
               </div>
-              <Button type="submit" className="w-full">
-                Add Product
+              <div className="space-y-2">
+                <Label htmlFor="imageInput">Product Image</Label>
+                <div className="flex items-center space-x-2">
+                  <Input
+                    id="imageInput"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                  <Label
+                    htmlFor="imageInput"
+                    className="cursor-pointer inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-300"
+                  >
+                    <Upload className="w-5 h-5 mr-2" />
+                    Select Image
+                  </Label>
+                  {selectedImage && (
+                    <Button
+                      type="button"
+                      onClick={handleClearImage}
+                      variant="destructive"
+                      size="icon"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+              {error && <p className="text-red-500 text-sm">{error}</p>}
+              {previewUrl && (
+                <div className="mt-2">
+                  <img
+                    src={previewUrl}
+                    alt="Product preview"
+                    className="max-w-full h-auto rounded-lg"
+                  />
+                </div>
+              )}
+              {uploadProgress > 0 && uploadProgress < 100 && (
+                <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                  <div
+                    className="bg-blue-600 h-2.5 rounded-full"
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                </div>
+              )}
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={uploadProgress > 0 && uploadProgress < 100}
+              >
+                {uploadProgress > 0 && uploadProgress < 100 ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  "Add Product"
+                )}
               </Button>
             </form>
           </DialogContent>
@@ -222,9 +405,10 @@ export default function SimplifiedProductListing() {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <AnimatePresence>
-          {productData?.products.map((product) => (
+          {products.map((product) => (
             <motion.div
               key={product.id}
+              layoutId={`card-${product.id}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
@@ -236,31 +420,38 @@ export default function SimplifiedProductListing() {
                 </CardHeader>
                 <CardContent>
                   <img
-                    src="/arrival1.png"
+                    src={"arrival1.png"}
                     alt={product.name}
                     className="w-full h-48 object-cover rounded-md mb-4"
                   />
                   <p className="text-sm text-gray-600 mb-2">
                     {product.description}
                   </p>
-                  <p className="font-bold mb-2">${product.price.toFixed(2)}</p>
-                  <p className="text-sm">Stock: {product.stock}</p>
+                  <p className="font-bold">${product.price.toFixed(2)}</p>
                   <p className="text-sm">Material: {product.material}</p>
+                  <p className="text-sm">Stock: {product.stock}</p>
                 </CardContent>
                 <CardFooter>
-                  <Button className="w-full">View Details</Button>
+                  <Button
+                    className="w-full"
+                    onClick={() => setExpandedProductId(product.id)}
+                  >
+                    View Details
+                  </Button>
                 </CardFooter>
               </Card>
             </motion.div>
           ))}
         </AnimatePresence>
       </div>
-      {productData && (
-        <div className="mt-6 text-center text-sm text-gray-500">
-          Showing {productData.products.length} of {productData.totalProducts}{" "}
-          products
-        </div>
-      )}
+      <AnimatePresence>
+        {expandedProductId && (
+          <ExpandedCard
+            product={products.find((p) => p.id === expandedProductId)!}
+            onClose={() => setExpandedProductId(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
