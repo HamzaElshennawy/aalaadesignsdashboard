@@ -172,3 +172,89 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid method" }, { status: 400 });
   }
 }
+
+export async function PUT(req: NextRequest) {
+  // check for the product data in the request body
+  const body = await req.json();
+  const {
+    id,
+    name,
+    description,
+    price,
+    stock,
+    image_path,
+    categoryid,
+    material,
+    subcategoryid,
+  } = body;
+  if (name === null || name === undefined) {
+    return NextResponse.json(
+      { error: "Invalid product name" },
+      { status: 400 }
+    );
+  }
+
+  if (description === null || description === undefined) {
+    return NextResponse.json(
+      { error: "Invalid product description" },
+      { status: 400 }
+    );
+  }
+
+  if (price === null || price === undefined) {
+    return NextResponse.json(
+      { error: "Invalid product price" },
+      { status: 400 }
+    );
+  }
+
+  if (stock === null || stock === undefined) {
+    return NextResponse.json(
+      { error: "Invalid product stock" },
+      { status: 400 }
+    );
+  }
+
+  if (image_path === null || image_path === undefined) {
+    return NextResponse.json(
+      { error: "Invalid product image_path" },
+      { status: 400 }
+    );
+  }
+
+  if (categoryid === null || categoryid === undefined) {
+    return NextResponse.json(
+      { error: "Invalid product categoryid" },
+      { status: 400 }
+    );
+  }
+
+  if (material === null || material === undefined) {
+    return NextResponse.json(
+      { error: "Invalid product material" },
+      { status: 400 }
+    );
+  }
+  if (subcategoryid === null || subcategoryid === undefined) {
+    return NextResponse.json(
+      {
+        error: "Invalid product subcategoryid",
+      },
+      { status: 400 }
+    );
+  }
+
+  // update the product data in the database
+  const result =
+    await sql`UPDATE products SET name = ${name}, description = ${description}, price = ${price}, stock = ${stock}, image_path = ${image_path}, categoryid = ${categoryid}, material = ${material}, subcategoryid = ${subcategoryid} WHERE id = ${id};`;
+  if (result.rowCount === 0) {
+    return NextResponse.json(
+      { Error: "something went wrong" },
+      { status: 400 }
+    );
+  }
+  return NextResponse.json(
+    { message: "Product updated successfully" },
+    { status: 200 }
+  );
+}
