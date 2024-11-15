@@ -2,12 +2,7 @@
 
 import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  ref,
-  uploadBytesResumable,
-  UploadTaskSnapshot,
-  getDownloadURL,
-} from "firebase/storage";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -28,7 +23,6 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, Plus, Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { initializeApp } from "firebase/app";
 import { storage } from "./firebase";
 
 interface Product {
@@ -44,11 +38,7 @@ interface Product {
   subcategoryid: number;
 }
 
-interface NewProduct
-  extends Omit<
-    Product,
-    "id" | "createdat" | "stock" | "categoryid" | "subcategoryid"
-  > {}
+type NewProduct = Omit<Product, "id" | "createdat">;
 
 interface ProductsResponse {
   products: Product[];
@@ -58,61 +48,6 @@ interface ProductsResponse {
   nextPage: number | null;
   limit: number;
 }
-
-const ExpandedCard = ({
-  product,
-  onClose,
-}: {
-  product: Product;
-  onClose: () => void;
-}) => (
-  <motion.div
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    exit={{ opacity: 0 }}
-    className="fixed inset-0 z-50 overflow-y-auto"
-    style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
-    onClick={onClose}
-  >
-    <motion.div
-      layoutId={`card-${product.id}`}
-      className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6 m-4"
-      onClick={(e) => e.stopPropagation()}
-      initial={{ scale: 0.9, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      exit={{ scale: 0.9, opacity: 0 }}
-      transition={{ type: "spring", damping: 30, stiffness: 300 }}
-    >
-      <Button
-        className="absolute top-4 right-4"
-        variant="ghost"
-        size="icon"
-        onClick={onClose}
-      >
-        <X className="h-6 w-6" />
-      </Button>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <img
-            src={"arrival1.png"}
-            alt={product.name}
-            className="w-full h-64 object-cover rounded-md"
-          />
-        </div>
-        <div>
-          <h2 className="text-2xl font-bold mb-2">{product.name}</h2>
-          <p className="text-gray-600 mb-4">{product.description}</p>
-          <p className="font-bold text-xl mb-2">${product.price.toFixed(2)}</p>
-          <p className="text-sm mb-1">Material: {product.material}</p>
-          <p className="text-sm mb-4">Stock: {product.stock}</p>
-          <p className="text-sm text-gray-500">
-            Added on: {new Date(product.createdat).toLocaleDateString()}
-          </p>
-        </div>
-      </div>
-    </motion.div>
-  </motion.div>
-);
 
 export default function ProductListingPage() {
   const { toast } = useToast();
@@ -124,14 +59,15 @@ export default function ProductListingPage() {
     name: "",
     description: "",
     price: 0,
+    stock: 0,
     image_path: "",
+    categoryid: 0,
     material: "",
+    subcategoryid: 0,
   });
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [expandedProductId, setExpandedProductId] = useState<number | null>(
-    null
-  );
+
   const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   useEffect(() => {
@@ -160,7 +96,13 @@ export default function ProductListingPage() {
     const { name, value } = e.target;
     setNewProduct((prev) => ({
       ...prev,
-      [name]: name === "price" ? parseFloat(value) : value,
+      [name]:
+        name === "price" ||
+        name === "stock" ||
+        name === "categoryid" ||
+        name === "subcategoryid"
+          ? parseInt(value, 10)
+          : value,
     }));
   };
 
@@ -196,7 +138,6 @@ export default function ProductListingPage() {
     }
 
     try {
-      // Upload image to Firebase Storage
       const storageRef = ref(storage, `products/${selectedImage.name}`);
       const uploadTask = uploadBytesResumable(storageRef, selectedImage);
 
@@ -205,7 +146,6 @@ export default function ProductListingPage() {
         (snapshot) => {
           const progress =
             (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          console.log(progress);
           setUploadProgress(progress);
         },
         (error) => {
@@ -213,29 +153,27 @@ export default function ProductListingPage() {
           setError("Failed to upload image. Please try again.");
         },
         async () => {
-          // Get download URL after successful upload
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          console.log(downloadURL);
 
           const productToAdd: NewProduct = {
             ...newProduct,
             image_path: downloadURL,
           };
 
-          //const response = await fetch("/api/products/product", {
-          //  method: "POST",
-          //  headers: {
-          //    "Content-Type": "application/json",
-          //  },
-          //  body: JSON.stringify(productToAdd),
-          //});
+          const response = await fetch("/api/products/product", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(productToAdd),
+          });
 
-          //if (!response.ok) {
-          //  throw new Error("Failed to add product");
-          //}
+          if (!response.ok) {
+            throw new Error(`Failed to add product ${response.statusText}`);
+          }
 
-          //const addedProduct = await response.json();
-          //setProducts((prevProducts) => [...prevProducts, addedProduct]);
+          const addedProduct = await response.json();
+          setProducts((prevProducts) => [...prevProducts, addedProduct]);
           setIsModalOpen(false);
           resetForm();
           toast({
@@ -261,8 +199,11 @@ export default function ProductListingPage() {
       name: "",
       description: "",
       price: 0,
+      stock: 0,
       image_path: "",
+      categoryid: 0,
       material: "",
+      subcategoryid: 0,
     });
     setSelectedImage(null);
     setPreviewUrl(null);
@@ -329,11 +270,44 @@ export default function ProductListingPage() {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="stock">Stock</Label>
+                <Input
+                  id="stock"
+                  name="stock"
+                  type="number"
+                  value={newProduct.stock}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="material">Material</Label>
                 <Input
                   id="material"
                   name="material"
                   value={newProduct.material}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="categoryid">Category ID</Label>
+                <Input
+                  id="categoryid"
+                  name="categoryid"
+                  type="number"
+                  value={newProduct.categoryid}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="subcategoryid">Subcategory ID</Label>
+                <Input
+                  id="subcategoryid"
+                  name="subcategoryid"
+                  type="number"
+                  value={newProduct.subcategoryid}
                   onChange={handleInputChange}
                   required
                 />
@@ -420,22 +394,19 @@ export default function ProductListingPage() {
                 </CardHeader>
                 <CardContent>
                   <img
-                    src={"arrival1.png"}
+                    src={product.image_path}
                     alt={product.name}
                     className="w-full h-48 object-cover rounded-md mb-4"
                   />
                   <p className="text-sm text-gray-600 mb-2">
                     {product.description}
                   </p>
-                  <p className="font-bold">${product.price.toFixed(2)}</p>
+                  <p className="font-bold">${product.price}</p>
                   <p className="text-sm">Material: {product.material}</p>
                   <p className="text-sm">Stock: {product.stock}</p>
                 </CardContent>
                 <CardFooter>
-                  <Button
-                    className="w-full"
-                    onClick={() => setExpandedProductId(product.id)}
-                  >
+                  <Button className="w-full" onClick={() => {}}>
                     View Details
                   </Button>
                 </CardFooter>
@@ -444,14 +415,6 @@ export default function ProductListingPage() {
           ))}
         </AnimatePresence>
       </div>
-      <AnimatePresence>
-        {expandedProductId && (
-          <ExpandedCard
-            product={products.find((p) => p.id === expandedProductId)!}
-            onClose={() => setExpandedProductId(null)}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 }
