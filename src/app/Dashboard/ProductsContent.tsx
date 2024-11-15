@@ -225,6 +225,8 @@ export default function ProductListingPage() {
     }
     setRemovingProduct(false);
   };
+  //TODO: implement this function in both fron and back end
+  const handleUpdateProduct = async (productId: number) => {};
 
   const resetForm = () => {
     setNewProduct({
@@ -438,8 +440,11 @@ export default function ProductListingPage() {
                   <p className="text-sm">Stock: {product.stock}</p>
                 </CardContent>
                 <CardFooter>
-                  <Button className="w-full mx-2" onClick={() => {}}>
-                    View Details
+                  <Button
+                    className="w-full mx-2"
+                    onClick={() => handleUpdateProduct(product.id)}
+                  >
+                    Update
                   </Button>
                   <Button
                     className="w-full mx-2"
