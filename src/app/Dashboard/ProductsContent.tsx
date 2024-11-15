@@ -21,7 +21,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Loader2, Plus, Upload, X } from "lucide-react";
+import { Loader2, Minus, Plus, Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { storage } from "./firebase";
 
@@ -55,6 +55,7 @@ export default function ProductListingPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [removingProduct, setRemovingProduct] = useState(false);
   const [newProduct, setNewProduct] = useState<NewProduct>({
     name: "",
     description: "",
@@ -192,6 +193,37 @@ export default function ProductListingPage() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleProductRemove = async (productId: number) => {
+    setRemovingProduct(true);
+    try {
+      const response = await fetch(`/api/products/product`, {
+        method: "POST",
+        body: JSON.stringify({ id: productId, method: "delete" }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete product ${response.statusText}`);
+      }
+
+      setProducts((prevProducts) =>
+        prevProducts.filter((product) => product.id !== productId)
+      );
+
+      toast({
+        title: "Product removed",
+        description: "The product has been removed from the catalog.",
+      });
+    } catch (error) {
+      console.error("Error removing product:", error);
+      toast({
+        title: "Error",
+        description: "Failed to remove the product. Please try again.",
+        variant: "destructive",
+      });
+    }
+    setRemovingProduct(false);
   };
 
   const resetForm = () => {
@@ -406,8 +438,16 @@ export default function ProductListingPage() {
                   <p className="text-sm">Stock: {product.stock}</p>
                 </CardContent>
                 <CardFooter>
-                  <Button className="w-full" onClick={() => {}}>
+                  <Button className="w-full mx-2" onClick={() => {}}>
                     View Details
+                  </Button>
+                  <Button
+                    className="w-full mx-2"
+                    variant="destructive"
+                    disabled={removingProduct}
+                    onClick={() => handleProductRemove(product.id)}
+                  >
+                    Remove this Product
                   </Button>
                 </CardFooter>
               </Card>
